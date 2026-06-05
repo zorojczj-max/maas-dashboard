@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全球企业 MaaS 实时全景 | Global Enterprise MaaS Panorama</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<style>
+:root {
+  --bg: #0a0e17; --surface: rgba(255,255,255,0.025); --border: rgba(255,255,255,0.07);
+  --text: #e0e6ed; --text2: #8899aa; --text3: #5a6a7a;
+  --blue: #60a5fa; --purple: #a78bfa; --green: #34d399; --red: #f87171;
+  --yellow: #fbbf24; --orange: #fb923c; --cyan: #22d3ee;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+.container { max-width:1400px; margin:0 auto; padding:24px 32px; }
+header { text-align:center; padding:48px 0 32px; border-bottom:1px solid var(--border); }
+header h1 { font-size:30px; font-weight:700; background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+header .sub { color:var(--text2); font-size:13px; margin-top:8px; }
+header .updated { color:var(--text3); font-size:11px; margin-top:4px; }
+nav { display:flex; gap:6px; justify-content:center; margin-top:20px; flex-wrap:wrap; }
+nav a { color:var(--text2); text-decoration:none; padding:6px 16px; border-radius:20px; font-size:13px; cursor:pointer; transition:all .2s; border:1px solid transparent; }
+nav a:hover, nav a.active { color:var(--blue); border-color:rgba(96,165,250,0.3); background:rgba(96,165,250,0.08); }
+.section { margin-top:48px; }
+.section h2 { font-size:20px; font-weight:600; color:#c8d6e5; margin-bottom:6px; display:flex; align-items:center; gap:10px; }
+.section h2 .num { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,#1e3a5f,#2563eb); color:#fff; font-size:13px; font-weight:700; }
+.section .desc { color:var(--text2); font-size:13px; margin-bottom:20px; }
+.chart-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:16px; }
+.chart-box { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; min-height:320px; }
+.chart-box h3 { font-size:14px; color:#a0b0c0; margin-bottom:12px; font-weight:500; }
+.chart-box.full { grid-column:1/-1; }
+.analysis { background:rgba(96,165,250,0.04); border-left:3px solid #2563eb; border-radius:0 8px 8px 0; padding:16px 20px; margin:16px 0 24px; font-size:13.5px; color:#9ab; line-height:1.85; }
+.analysis strong { color:var(--blue); }
+.stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:24px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px; text-align:center; }
+.stat-card .val { font-size:28px; font-weight:700; background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+.stat-card .label { font-size:12px; color:var(--text3); margin-top:4px; }
+.filter-bar { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+.filter-bar button { padding:5px 14px; border-radius:16px; border:1px solid var(--border); background:transparent; color:var(--text2); font-size:12px; cursor:pointer; transition:all .2s; }
+.filter-bar button:hover, .filter-bar button.active { background:rgba(96,165,250,0.15); color:var(--blue); border-color:rgba(96,165,250,0.4); }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { background:rgba(30,58,95,0.5); color:#8cb4d8; font-weight:600; padding:10px 12px; text-align:left; border-bottom:2px solid rgba(96,165,250,0.2); position:sticky; top:0; z-index:2; white-space:nowrap; }
+td { padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04); }
+tr:hover td { background:rgba(96,165,250,0.04); }
+.table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:auto; max-height:600px; }
+.price { color:var(--green); font-family:monospace; }
+.badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+.badge-llm { background:rgba(96,165,250,0.15); color:var(--blue); }
+.badge-coding { background:rgba(167,139,250,0.15); color:var(--purple); }
+.badge-multimodal { background:rgba(251,191,36,0.15); color:var(--yellow); }
+.badge-video { background:rgba(248,113,113,0.15); color:var(--red); }
+.badge-embodied { background:rgba(52,211,153,0.15); color:var(--green); }
+.region-tag { display:inline-block; padding:1px 6px; border-radius:8px; font-size:10px; font-weight:600; margin-left:4px; }
+.region-cn { background:rgba(248,113,113,0.12); color:#f87171; }
+.region-global { background:rgba(96,165,250,0.12); color:#60a5fa; }
+.heat-table td { text-align:center; font-size:11px; padding:5px 3px; min-width:36px; white-space:nowrap; }
+.heat-table th { font-size:11px; padding:6px 3px; }
+.heat-0 { background:transparent; }
+.heat-1 { background:rgba(96,165,250,0.1); }
+.heat-2 { background:rgba(96,165,250,0.2); color:#8cb4d8; }
+.heat-3 { background:rgba(96,165,250,0.35); color:#a0c8e8; }
+.heat-4 { background:rgba(96,165,250,0.5); color:#c0d8f0; }
+.heat-5 { background:rgba(96,165,250,0.7); color:#fff; font-weight:700; }
+.news-card { display:flex; gap:14px; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.04); transition:background .2s; }
+.news-card:hover { background:rgba(96,165,250,0.04); }
+.news-date { color:var(--text3); font-size:12px; min-width:90px; padding-top:2px; font-family:monospace; }
+.news-body { flex:1; }
+.news-title { font-size:14px; color:#d0dae5; font-weight:500; }
+.news-summary { font-size:12px; color:var(--text2); margin-top:4px; }
+.news-tags { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+.news-tag { font-size:10px; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.06); color:var(--text2); }
+.impact-5 { border-left:3px solid var(--red); }
+.impact-4 { border-left:3px solid var(--yellow); }
+.impact-3 { border-left:3px solid var(--green); }
+#loading { text-align:center; padding:80px 20px; color:var(--text2); font-size:16px; }
+#loading .spinner { display:inline-block; width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+footer { text-align:center; padding:40px 0; color:var(--text3); font-size:12px; border-top:1px solid var(--border); margin-top:48px; }
+@media(max-width:768px) { .chart-row { grid-template-columns:1fr; } .stats-row { grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>全球企业级 MaaS 实时全景</h1>
+    <div class="sub">Global Enterprise MaaS Live Panorama</div>
+    <div class="updated" id="last-updated"></div>
+    <nav>
+      <a href="#overview" class="active">市场全景</a>
+      <a href="#models">模型库</a>
+      <a href="#matrix">行业×厂商矩阵</a>
+      <a href="#news">动态要闻</a>
+    </nav>
+  </header>
+  <div id="loading"><div class="spinner"></div><br>加载数据中...</div>
+  <div id="overview" class="section" style="display:none"></div>
+  <div id="models" class="section" style="display:none"></div>
+  <div id="matrix" class="section" style="display:none"></div>
+  <div id="news" class="section" style="display:none"></div>
+  <footer>数据来源：厂商官网 API 定价 / IDC / Gartner / 36氪 / 公开招投标 · 仅供研究参考</footer>
+</div>
+
+<script>
+const TYPE_CN = {llm:'LLM/推理',coding:'Coding',multimodal:'多模态/视觉',video:'视频生成',embodied:'具身 VLA'};
+const TYPE_BADGE = {llm:'badge-llm',coding:'badge-coding',multimodal:'badge-multimodal',video:'badge-video',embodied:'badge-embodied'};
+const CAT_COLORS = {'发布':'#60a5fa','开源':'#34d399','降价':'#f87171','中标':'#fbbf24','融资':'#a78bfa','政策':'#fb923c','动态':'#94a3b8'};
+
+async function loadJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`Failed: ${url}`);
+  return r.json();
+}
+
+async function init() {
+  try {
+    const [market, models, news, matrix] = await Promise.all([
+      loadJSON('data/market.json'),
+      loadJSON('data/models.json'),
+      loadJSON('data/news.json'),
+      loadJSON('data/matrix.json')
+    ]);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('last-updated').textContent = `数据更新：${market.last_refresh}`;
+    renderOverview(market, models);
+    renderModels(models);
+    renderMatrix(matrix);
+    renderNews(news);
+    document.querySelectorAll('.section').forEach(s => s.style.display = '');
+  } catch(e) {
+    document.getElementById('loading').innerHTML = '<span style="color:#f87171">数据加载失败，请确保 data/ 目录下的 JSON 文件存在</span>';
+    console.error(e);
+  }
+}
+
+function renderOverview(market, models) {
+  const el = document.getElementById('overview');
+  const cnModels = models.filter(m=>m.region==='中国').length;
+  const glModels = models.filter(m=>m.region==='海外').length;
+  const vendors = new Set(models.map(m=>m.vendor)).size;
+  el.innerHTML = `
+    <h2><span class="num">1</span>市场全景 · 空间 / 结构 / 拐点</h2>
+    <div class="desc">MaaS 仅含 API 调用与模型托管收入，不含 GenAI 应用与服务</div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="val">${vendors}</div><div class="label">覆盖厂商</div></div>
+      <div class="stat-card"><div class="val">${models.length}</div><div class="label">收录模型</div></div>
+      <div class="stat-card"><div class="val">${cnModels}</div><div class="label">中国模型</div></div>
+      <div class="stat-card"><div class="val">${glModels}</div><div class="label">海外模型</div></div>
+      <div class="stat-card"><div class="val">${market.industries.length}</div><div class="label">行业赛道</div></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-box"><h3>全球 vs 中国 MaaS 市场规模（亿元/亿美元）</h3><div id="chart-size" style="height:280px"></div></div>
+      <div class="chart-box"><h3>按模型类型结构（2025 vs 2026E，亿元）</h3><div id="chart-type" style="height:280px"></div></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-box full"><h3>各行业市场规模与 CAGR（中国，2025→2026E）</h3><div id="chart-industry" style="height:400px"></div></div>
+    </div>
+    <div class="analysis">
+      <strong>核心判断：</strong>全球 MaaS 市场从 2024 年的约 168 亿美元快速增长至 2025E 的 385 亿美元，预计 2026E 达 720 亿美元。中国市场从 50.6 亿元增至 116.5 亿元（+130%），约占全球 4%——差距主要来自海外企业级 API 调用量远高于国内。
+      LLM 推理仍是最大品类（58→102 亿元），但<strong>视频生成</strong>增速最快（+116%），具身智能 VLA 从 5 亿起步翻倍至 10 亿。
+      行业侧，<strong>短剧/短漫</strong>（CAGR 146%）、<strong>AI 工具初创</strong>（128%）和<strong>具身智能</strong>（109%）是增速前三；
+      互联网平台仍是最大单一市场（35.8 亿），但占比从 19% 降至 16%——MaaS 正在从互联网自用走向全行业渗透。
+      海外方面，OpenAI/Anthropic/Google 三强格局稳固，Anthropic ARR 已突破 $300 亿超越 OpenAI；国内 DeepSeek 凭极致性价比和开源策略实现快速渗透，火山方舟以调用量计占据近半市场。
+    </div>`;
+  // Chart: Market size
+  echarts.init(document.getElementById('chart-size')).setOption({
+    tooltip:{trigger:'axis',backgroundColor:'#1a2332',borderColor:'#2a3a4a',textStyle:{color:'#e0e6ed'}},
+    legend:{data:['全球(亿美元)','中国(亿元)'],textStyle:{color:'#8899aa'},top:0},
+    xAxis:{type:'category',data:market.global_market.map(d=>d.year),axisLine:{lineStyle:{color:'#2a3a4a'}},axisLabel:{color:'#8899aa'}},
+    yAxis:[
+      {type:'value',name:'亿美元',nameTextStyle:{color:'#6b7d8e'},axisLine:{show:false},splitLine:{lineStyle:{color:'rgba(255,255,255,0.04)'}},axisLabel:{color:'#8899aa'}},
+      {type:'value',name:'亿元',nameTextStyle:{color:'#6b7d8e'},axisLine:{show:false},splitLine:{show:false},axisLabel:{color:'#8899aa'}}
+    ],
+    series:[
+      {name:'全球(亿美元)',type:'bar',data:market.global_market.map(d=>d.value),itemStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#60a5fa'},{offset:1,color:'#1e3a5f'}]),borderRadius:[4,4,0,0]},barWidth:'35%',label:{show:true,position:'top',color:'#8cb4d8',fontSize:11}},
+      {name:'中国(亿元)',type:'line',yAxisIndex:1,data:market.china_market.map(d=>d.value),lineStyle:{color:'#a78bfa',width:3},itemStyle:{color:'#a78bfa'},symbol:'circle',symbolSize:8,label:{show:true,color:'#a78bfa',fontSize:11}}
+    ],
+    grid:{left:60,right:60,top:40,bottom:30}
+  });
+  // Chart: Type structure
+  echarts.init(document.getElementById('chart-type')).setOption({
+    tooltip:{trigger:'axis',backgroundColor:'#1a2332',borderColor:'#2a3a4a',textStyle:{color:'#e0e6ed'}},
+    legend:{data:['2025E','2026E'],textStyle:{color:'#8899aa'},top:0},
+    xAxis:{type:'value',axisLine:{lineStyle:{color:'#2a3a4a'}},splitLine:{lineStyle:{color:'rgba(255,255,255,0.04)'}},axisLabel:{color:'#8899aa'}},
+    yAxis:{type:'category',data:market.model_type_split.map(d=>d.type),axisLine:{lineStyle:{color:'#2a3a4a'}},axisLabel:{color:'#8899aa'}},
+    series:[
+      {name:'2025E',type:'bar',data:market.model_type_split.map(d=>d.y2025),itemStyle:{color:'#2563eb'},barWidth:'35%'},
+      {name:'2026E',type:'bar',data:market.model_type_split.map(d=>d.y2026),itemStyle:{color:'#60a5fa'},barWidth:'35%'}
+    ],
+    grid:{left:100,right:30,top:30,bottom:20}
+  });
+  // Chart: Industry bubble
+  echarts.init(document.getElementById('chart-industry')).setOption({
+    tooltip:{trigger:'item',backgroundColor:'#1a2332',borderColor:'#2a3a4a',textStyle:{color:'#e0e6ed'},
+      formatter:p=>`<b>${p.data[3]}</b><br/>2025: ${p.data[4]}亿 → 2026E: ${p.data[0]}亿<br/>CAGR: ${p.data[1]}%`},
+    xAxis:{name:'2026E 规模（亿元）',nameTextStyle:{color:'#6b7d8e'},nameLocation:'middle',nameGap:30,axisLine:{lineStyle:{color:'#2a3a4a'}},splitLine:{lineStyle:{color:'rgba(255,255,255,0.04)'}},axisLabel:{color:'#8899aa'}},
+    yAxis:{name:'CAGR（%）',nameTextStyle:{color:'#6b7d8e'},axisLine:{lineStyle:{color:'#2a3a4a'}},splitLine:{lineStyle:{color:'rgba(255,255,255,0.04)'}},axisLabel:{color:'#8899aa'}},
+    series:[{type:'scatter',
+      data:market.industries.map(d=>[d.y2026, d.cagr, d.y2026, d.name, d.y2025]),
+      symbolSize:d=>Math.max(14, d[2]*1.6),
+      itemStyle:{color:p=>{const c=p.data[1]; return c>100?'#f87171':c>80?'#fb923c':c>60?'#fbbf24':'#60a5fa';}, opacity:0.85},
+      label:{show:true,position:'right',color:'#8cb4d8',fontSize:11,formatter:p=>p.data[3]}
+    }],
+    grid:{left:60,right:130,top:20,bottom:50}
+  });
+  window.addEventListener('resize',()=>{
+    document.querySelectorAll('[_echarts_instance_]').forEach(el=>echarts.getInstanceByDom(el)?.resize());
+  });
+}
+
+function renderModels(models) {
+  const el = document.getElementById('models');
+  const types = ['all','llm','coding','multimodal','video','embodied'];
+  const regions = ['all','中国','海外'];
+  let html = `<h2><span class="num">2</span>模型库</h2>
+    <div class="desc">按发布时间倒序，含 API 定价（USD/M tokens）与 Benchmark</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+      <div class="filter-bar" id="type-filter" style="margin:0">`;
+  types.forEach(t=>{
+    const label = t==='all'?'全部类型':TYPE_CN[t];
+    html += `<button data-type="${t}" class="${t==='all'?'active':''}">${label}</button>`;
+  });
+  html += `</div><div class="filter-bar" id="region-filter" style="margin:0">`;
+  regions.forEach(r=>{
+    const label = r==='all'?'全部地区':r;
+    html += `<button data-region="${r}" class="${r==='all'?'active':''}">${label}</button>`;
+  });
+  html += `</div></div><div class="table-wrap"><table><thead><tr>
+    <th>模型</th><th>厂商</th><th>地区</th><th>类型</th><th>发布</th><th>上下文(K)</th><th>输入价格</th><th>输出价格</th><th>说明</th>
+  </tr></thead><tbody id="model-tbody"></tbody></table></div>`;
+  el.innerHTML = html;
+
+  let curType='all', curRegion='all';
+  function renderTable() {
+    const filtered = models.filter(m => (curType==='all'||m.type===curType) && (curRegion==='all'||m.region===curRegion));
+    document.getElementById('model-tbody').innerHTML = filtered.map(m=>`<tr>
+      <td style="font-weight:600">${m.name}</td>
+      <td>${m.vendor}</td>
+      <td><span class="region-tag ${m.region==='中国'?'region-cn':'region-global'}">${m.region}</span></td>
+      <td><span class="badge ${TYPE_BADGE[m.type]}">${TYPE_CN[m.type]}</span></td>
+      <td style="color:#5a7a90;font-family:monospace;font-size:12px">${m.date}</td>
+      <td style="text-align:center">${m.ctx||'—'}</td>
+      <td class="price">${m.pin!=null?'$'+m.pin.toFixed(2):'—'}</td>
+      <td class="price">${m.pout!=null?'$'+m.pout.toFixed(2):'—'}</td>
+      <td style="color:#8899aa;font-size:12px">${m.note||''}</td>
+    </tr>`).join('');
+  }
+  renderTable();
+  document.getElementById('type-filter').addEventListener('click',e=>{
+    if(e.target.tagName!=='BUTTON') return;
+    document.querySelectorAll('#type-filter button').forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active');
+    curType = e.target.dataset.type;
+    renderTable();
+  });
+  document.getElementById('region-filter').addEventListener('click',e=>{
+    if(e.target.tagName!=='BUTTON') return;
+    document.querySelectorAll('#region-filter button').forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active');
+    curRegion = e.target.dataset.region;
+    renderTable();
+  });
+}
+
+function renderMatrix(matrix) {
+  const el = document.getElementById('matrix');
+  const {industries, vendors, scores, labels} = matrix;
+  let html = `<h2><span class="num">3</span>行业 × 厂商合作领域矩阵</h2>
+    <div class="desc">基于公开中标/案例的相对落地强度（0-5），颜色越深渗透越强。含中国与海外厂商。</div>
+    <div class="table-wrap" style="overflow-x:auto"><table class="heat-table"><thead><tr><th style="min-width:110px">行业 \\ 厂商</th>`;
+  vendors.forEach(v=>{
+    const color = v.group==='云 MaaS'?'#60a5fa':v.group==='基础大模型'?'#a78bfa':'#fbbf24';
+    html += `<th style="writing-mode:vertical-lr;text-orientation:mixed;color:${color}">${v.name}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+  industries.forEach((ind,i)=>{
+    html += `<tr><td style="font-weight:500;text-align:left;padding-left:10px;white-space:nowrap">${ind}</td>`;
+    vendors.forEach((_,j)=>{
+      const v = scores[i] ? (scores[i][j]||0) : 0;
+      const lbl = (labels[i] && labels[i][j]) ? labels[i][j] : '';
+      html += `<td class="heat-${v}" title="${lbl}">${v>0?v:''}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table></div>
+    <div class="analysis">
+      <strong>矩阵解读：</strong>国内方面，字节豆包/火山方舟覆盖广度领先（14/15 行业），华为盘古在政府/电信/能源等信创行业占绝对优势（5 分），DeepSeek 凭开源在金融和政府实现非云厂商深度渗透。
+      海外方面，<strong>OpenAI</strong> 通过 ChatGPT/Azure 在互联网和金融领域渗透最深，<strong>Anthropic</strong> 以 Claude API 在企业级和编程场景快速增长，<strong>Google</strong> 依托 Vertex AI 在云原生客户中占优。
+      <strong>Meta Llama</strong> 作为开源标杆被广泛集成，xAI Grok 和 Mistral 在特定细分市场有差异化优势。
+      视频生成赛道中美双强格局明显（可灵/即梦 vs Sora/Veo/Runway），具身智能仍以国内厂商为主。
+    </div>`;
+  el.innerHTML = html;
+}
+
+function renderNews(news) {
+  const el = document.getElementById('news');
+  const cats = ['全部','发布','开源','降价','中标','融资','政策','动态'];
+  let html = `<h2><span class="num">4</span>动态要闻流</h2>
+    <div class="desc">2024.12 – 2026.06 全球 MaaS 关键事件，按时间倒序</div>
+    <div class="filter-bar" id="news-filter">`;
+  cats.forEach(c=>{ html += `<button data-cat="${c}" class="${c==='全部'?'active':''}">${c}</button>`; });
+  html += `</div><div id="news-list"></div>`;
+  el.innerHTML = html;
+  function renderList(filter) {
+    const filtered = filter==='全部'?news:news.filter(n=>n.cat===filter);
+    document.getElementById('news-list').innerHTML = filtered.map(n=>`<div class="news-card impact-${n.impact}">
+      <div class="news-date">${n.date}</div>
+      <div class="news-body">
+        <div class="news-title">${n.title}</div>
+        ${n.summary?`<div class="news-summary">${n.summary}</div>`:''}
+        <div class="news-tags">
+          <span class="news-tag" style="color:${CAT_COLORS[n.cat]||'#8899aa'};background:${CAT_COLORS[n.cat]}15">${n.cat}</span>
+          <span class="news-tag">影响力 ${n.impact}</span>
+          ${n.source?`<span class="news-tag">${n.source}</span>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+  }
+  renderList('全部');
+  document.getElementById('news-filter').addEventListener('click',e=>{
+    if(e.target.tagName!=='BUTTON') return;
+    document.querySelectorAll('#news-filter button').forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active');
+    renderList(e.target.dataset.cat);
+  });
+}
+
+// Smooth scroll nav
+document.querySelectorAll('nav a').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    document.querySelectorAll('nav a').forEach(n=>n.classList.remove('active'));
+    a.classList.add('active');
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({behavior:'smooth'});
+  });
+});
+
+init();
+</script>
+</body>
+</html>
